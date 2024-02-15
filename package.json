@@ -4,9 +4,8 @@
   "description": "Implementation of the WebSocket remote control task",
   "main": "index.js",
   "scripts": {
-    "start-ts-node-dev": "ts-node-dev src/index.ts",
-    "start-nodemon": "nodemon src/index.ts",
-    "start-webpack": "webpack --mode production && ts-node-dev dist/bundle.js"
+    "start-tsx": "tsx src/index.ts",
+    "start-webpack-tsx": "webpack --mode production && tsx dist/bundle.js"
   },
   "author": "MDz1985",
   "keywords": [],
@@ -16,13 +15,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
-    "@types/nodemon": "^1.19.6",
     "@types/webpack": "^5.28.5",
     "@types/ws": "^8.5.10",
-    "nodemon": "^3.0.3",
     "ts-loader": "^9.5.1",
-    "ts-node": "^11.0.0-beta.1",
-    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.1",
     "webpack-cli": "^5.1.4",
