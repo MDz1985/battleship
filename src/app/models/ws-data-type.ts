@@ -1,4 +1,4 @@
-export enum WsDataType {
+export enum WS_DATA_TYPE {
   REG = 'reg',
   UPDATE_WINNERS = 'update_winners',
   CREATE_ROOM = 'create_room',
