@@ -20,12 +20,16 @@ export interface IRequest<T> {
 
 class Query<T> {
   type: WS_DATA_TYPE;
-  data: T;
+  data: string;
   id = 0;
 
   constructor(data: T, type: WS_DATA_TYPE) {
-    this.data = data;
+    this.data = JSON.stringify(data);
     this.type = type;
+  }
+
+  get response(): string {
+    return JSON.stringify(this);
   }
 }
 
@@ -43,7 +47,7 @@ export class AddUserToRoomRequest extends Query<IAddUserToRoomData> {}
 
 export class CreateGameResponse extends Query<ICreateGameData> {}
 
-export class UpdateRoomResponse extends Query<ICreateGameData> {}
+export class UpdateRoomResponse extends Query<string> {}
 
 // Ships
 export class AddShipsToTheGameBoardRequest extends Query<IAddShipsData> {}

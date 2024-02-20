@@ -4,8 +4,8 @@
   "description": "Implementation of the WebSocket remote control task",
   "main": "index.js",
   "scripts": {
-    "start-tsx": "tsx src/index.ts",
-    "start-webpack-tsx": "webpack --mode production && tsx dist/bundle.js"
+    "start-tsx": "tsx watch src/index.ts",
+    "start-webpack-tsx": "webpack --mode production && tsx watch dist/bundle.js"
   },
   "author": "MDz1985",
   "keywords": [],
