@@ -1,7 +1,7 @@
 import { WS_DATA_TYPE } from './ws-data-type';
 import { IWinner } from './queries-data/player-data';
 import { ILoginRequestData, ILoginResponseData } from './queries-data/player-data';
-import { IAddUserToRoomData, ICreateGameData } from './queries-data/room-data';
+import { IAddUserToRoomData, ICreateGameData, IUpdateRoomData } from './queries-data/room-data';
 import { IAddShipsData } from './queries-data/ships-data';
 import {
   IAttackRequestData,
@@ -47,7 +47,7 @@ export class AddUserToRoomRequest extends Query<IAddUserToRoomData> {}
 
 export class CreateGameResponse extends Query<ICreateGameData> {}
 
-export class UpdateRoomResponse extends Query<string> {}
+export class UpdateRoomResponse extends Query<IUpdateRoomData[]> {}
 
 // Ships
 export class AddShipsToTheGameBoardRequest extends Query<IAddShipsData> {}

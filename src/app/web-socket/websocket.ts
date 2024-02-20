@@ -4,8 +4,10 @@ import { WS_DATA_TYPE } from '../models/ws-data-type';
 import { IRequest } from '../models/queries';
 import { GameService } from '../services/game.service';
 import { ILoginRequestData } from '../models/queries-data/player-data';
+import { State } from '../state/state';
 
 const gameService = new GameService();
+const state = new State();
 
 
 const wss: WebSocketServer = new WebSocketServer(options);
@@ -19,11 +21,15 @@ wss.on('connection', function connection(ws) {
     switch (dataObject?.type) {
       case WS_DATA_TYPE.REG:
         const data: ILoginRequestData = JSON.parse(dataObject.data);
-        ws.send(gameService.getRegResponse(({ name: data.name })));
+        ws.send(gameService.getRegResponse(({ name: data.name, password: data.password })));
         ws.send(gameService.getUpdateRoomResponse());
         ws.send(gameService.getUpdateWinnersResponse());
 
-        ws.emit('message', JSON.stringify({ type: WS_DATA_TYPE.UPDATE_WINNERS, data: [], id: 0 }));
+        // ws.emit('message', JSON.stringify({ type: WS_DATA_TYPE.UPDATE_WINNERS, data: [], id: 0 }));
+        break;
+      case WS_DATA_TYPE.CREATE_ROOM:
+        state.createRoom();
+        ws.send(gameService.getUpdateRoomResponse());
     }
   });
 });
