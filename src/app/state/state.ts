@@ -1,3 +1,5 @@
+import { IAddUserToRoomData } from '../models/queries-data/room-data';
+
 interface userState {
   name: string;
   index: number;
@@ -9,11 +11,17 @@ interface roomState {
   roomUsers: Omit<userState, 'password'>[]
 }
 
+interface gameState {
+  idGame: number;
+  idPlayer: number;
+}
+
 export class State {
   static instance: State;
   private _users: userState[] = [];
   private _currentUser?: Omit<userState, 'password'>;
   private _rooms: roomState[] = [];
+  private _games: gameState[] = [];
 
   constructor() {return State.instance ?? (State.instance = this);}
 
@@ -50,5 +58,27 @@ export class State {
 
   getRoomsWithOnePlayer() {
     return this._rooms.filter((gr) => gr.roomUsers.length === 1);
+  }
+
+  addUserToRoom(data: IAddUserToRoomData) {
+    this._rooms = this._rooms.map((room) => {
+      if (room.roomId === data.indexRoom && room.roomUsers.length === 1 && room.roomUsers[0].index !== this._currentUser?.index && this._currentUser) {
+        room.roomUsers.push(this._currentUser);
+      }
+      return room;
+    });
+  }
+
+  createGame() {
+    if (this._currentUser?.index) {
+      this._games.push({
+        idGame: this._games.length + 1,
+        idPlayer: this._currentUser.index
+      });
+    }
+  }
+
+  getGameBy(): gameState {
+    return this._games.find((g)=> g.idPlayer === this._currentUser?.index) as gameState
   }
 }

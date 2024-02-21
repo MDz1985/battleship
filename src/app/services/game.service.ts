@@ -1,5 +1,5 @@
 import { ILoginResponseData, IWinner } from '../models/queries-data/player-data';
-import { LoginResponse, UpdateRoomResponse, UpdateWinnersResponse } from '../models/queries';
+import { CreateGameResponse, LoginResponse, UpdateRoomResponse, UpdateWinnersResponse } from '../models/queries';
 import { WS_DATA_TYPE } from '../models/ws-data-type';
 import { State } from '../state/state';
 
@@ -26,6 +26,11 @@ export class GameService {
   getUpdateWinnersResponse() {
     const data: IWinner[] = []
     return new UpdateWinnersResponse(data, WS_DATA_TYPE.UPDATE_WINNERS).response;
+  }
+
+  getCreateGameResponse() {
+    const data = this._state.getGameBy();
+    return new CreateGameResponse(data, WS_DATA_TYPE.CREATE_GAME).response
   }
 }
 
