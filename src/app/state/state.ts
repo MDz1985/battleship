@@ -1,4 +1,5 @@
 import { IAddUserToRoomData } from '../models/queries-data/room-data';
+import { IAddShipsData, IShip } from '../models/queries-data/ships-data';
 
 interface userState {
   name: string;
@@ -12,8 +13,13 @@ interface roomState {
 }
 
 interface gameState {
-  idGame: number;
-  idPlayer: number;
+  gameId: number;
+  players: [
+    {
+      idPlayer: number;
+      ships: IShip[];
+    }
+  ];
 }
 
 export class State {
@@ -25,7 +31,11 @@ export class State {
 
   constructor() {return State.instance ?? (State.instance = this);}
 
-  addUser(user: Omit<userState, 'index'>): userState {
+  setCurrentUser(id: number) {
+    this._currentUser = this._users.find((user) => user.index === id) ?? {index: id, name: ''};
+  }
+
+  addUser(user: userState): userState {
     let resultUser = this._users.find((us) => user.password === us.password && user.name === us.name);
     if (!resultUser) {
       resultUser = { ...user, index: this._users.length + 1 };
@@ -71,14 +81,39 @@ export class State {
 
   createGame() {
     if (this._currentUser?.index) {
+      const gameId =this._games.length + 1
       this._games.push({
-        idGame: this._games.length + 1,
-        idPlayer: this._currentUser.index
+        gameId,
+        players: [
+          {
+            idPlayer: this._currentUser.index,
+            ships: []
+          }
+        ]
       });
+      return {idGame: gameId, idPlayer: this._currentUser.index}
     }
   }
 
-  getGameBy(): gameState {
-    return this._games.find((g)=> g.idPlayer === this._currentUser?.index) as gameState
+  // createGame({ gameId, ships, indexPlayer }: IAddShipsData) {
+  //   const game = this._games.find((game) => game.gameId === gameId);
+  //   if (game) {
+  //     game.players.push({
+  //       idPlayer: indexPlayer,
+  //       ships: ships
+  //     });
+  //   } else {
+  //     this._games.push({
+  //       gameId: this._games.length + 1,
+  //       players: [{
+  //         idPlayer: indexPlayer,
+  //         ships: ships
+  //       }]
+  //     });
+  //   }
+  // }
+
+  getGameById(id: number): gameState | undefined {
+    return this._games.find((g) => g.gameId === id);
   }
 }
