@@ -84,6 +84,8 @@ wss.on('connection', function connection(ws, request) {
             console.log('send', attackResponseData);
             ws.send(gameService.getAttackResponse(attackResponseData));
           });
+          const turnResponseData: ITurnResponseData = state.turn(attackData.gameId);
+          ws.send(gameService.getTurnResponse(turnResponseData));
         });
     }
   });

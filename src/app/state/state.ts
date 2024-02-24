@@ -20,6 +20,7 @@ interface gameState {
 }
 
 interface playerState {
+  matrix: number[][];
   idPlayer: number;
   ships: IShip[];
 }
@@ -90,7 +91,8 @@ export class State {
         players: [
           {
             idPlayer: this._currentUser.index,
-            ships: []
+            ships: [],
+            matrix: [[]]
           }
         ],
         currentPlayer: this._currentUser.index
@@ -98,24 +100,6 @@ export class State {
       return { idGame: gameId, idPlayer: this._currentUser.index };
     }
   }
-
-  // createGame({ gameId, ships, indexPlayer }: IAddShipsData) {
-  //   const game = this._games.find((game) => game.gameId === gameId);
-  //   if (game) {
-  //     game.players.push({
-  //       idPlayer: indexPlayer,
-  //       ships: ships
-  //     });
-  //   } else {
-  //     this._games.push({
-  //       gameId: this._games.length + 1,
-  //       players: [{
-  //         idPlayer: indexPlayer,
-  //         ships: ships
-  //       }]
-  //     });
-  //   }
-  // }
 
   getGameById(id: number): gameState | undefined {
     return this._games.find((g) => g.gameId === id);
@@ -126,10 +110,12 @@ export class State {
     const player = game.players.find((p) => p.idPlayer === this._currentUser?.index);
     if (player) {
       player.ships = data.ships;
+      player.matrix = this.createMatrix(data.ships);
     } else if (this._currentUser?.index) {
       game.players.push({
         idPlayer: this._currentUser.index,
-        ships: data.ships
+        ships: data.ships,
+        matrix: this.createMatrix(data.ships)
       });
     }
     const playersCount = 2;
@@ -151,11 +137,18 @@ export class State {
     return this.checkAttack(matrix, data.x, data.y);
   }
 
-  private getMatrix(game: gameState) {
+  private createMatrix(ships: IShip[]) {
     const fieldSize = 10;
-    const opponent = game.players.find((pl) => pl.idPlayer !== game.currentPlayer) as playerState;
     const matrix: number[][] = Array.from(Array(fieldSize), (el) => Array(fieldSize).fill(0));
-    return this.addShipToMatrix(matrix, opponent.ships);
+    return this.addShipToMatrix(matrix, ships);
+  }
+
+  private getMatrix(game: gameState) {
+    // const fieldSize = 10;
+    const opponent = game.players.find((pl) => pl.idPlayer !== game.currentPlayer) as playerState;
+    // const matrix: number[][] = Array.from(Array(fieldSize), (el) => Array(fieldSize).fill(0));
+    // return this.addShipToMatrix(matrix, opponent.ships);
+    return opponent.matrix
   }
 
   private addShipToMatrix(matrix: number[][], ships: IShip[]) {
