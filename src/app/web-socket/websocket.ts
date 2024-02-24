@@ -7,6 +7,7 @@ import { ILoginRequestData } from '../models/queries-data/player-data';
 import { State } from '../state/state';
 import { IAddUserToRoomData, ICreateGameData } from '../models/queries-data/room-data';
 import { IAddShipsData } from '../models/queries-data/ships-data';
+import { ITurnResponseData } from '../models/queries-data/game-data';
 
 const gameService = new GameService();
 const state = new State();
@@ -58,6 +59,8 @@ wss.on('connection', function connection(ws, request) {
         if(dataForStart) {
           wss.clients.forEach((ws)=>{
             ws.send(gameService.getStartGameResponse(dataForStart));
+            const turnResponseData: ITurnResponseData = state.turn(addShipsData.gameId);
+            ws.send(gameService.getTurnResponse(turnResponseData));
           })
         }
 

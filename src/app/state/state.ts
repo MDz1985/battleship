@@ -1,5 +1,6 @@
 import { IAddUserToRoomData } from '../models/queries-data/room-data';
 import { IAddShipsData, IShip, IStartGameData } from '../models/queries-data/ships-data';
+import { ITurnResponseData } from '../models/queries-data/game-data';
 
 interface userState {
   name: string;
@@ -20,6 +21,7 @@ interface gameState {
       ships: IShip[];
     }
   ];
+  currentPlayer: number
 }
 
 export class State {
@@ -89,7 +91,8 @@ export class State {
             idPlayer: this._currentUser.index,
             ships: []
           }
-        ]
+        ],
+        currentPlayer: this._currentUser.index
       });
       return { idGame: gameId, idPlayer: this._currentUser.index };
     }
@@ -132,5 +135,12 @@ export class State {
     return (game?.players?.length < playersCount) || !game.players.every((p) => p.ships.length) || !this._currentUser?.index
       ? null
       : { ships: data.ships, currentPlayerIndex: this._currentUser.index };
+  }
+
+  turn(gameId: number): ITurnResponseData {
+   const game = this.getGameById(gameId) as gameState;
+   const [first_player, second_player] = game.players.map((p)=>p.idPlayer);
+   game.currentPlayer = game.currentPlayer === first_player ? second_player : first_player
+   return { currentPlayer: game.currentPlayer }
   }
 }

@@ -1,9 +1,17 @@
 import { ILoginResponseData, IWinner } from '../models/queries-data/player-data';
-import { CreateGameResponse, LoginResponse, StartGameResponse, UpdateRoomResponse, UpdateWinnersResponse } from '../models/queries';
+import {
+  CreateGameResponse,
+  LoginResponse,
+  StartGameResponse,
+  TurnResponse,
+  UpdateRoomResponse,
+  UpdateWinnersResponse
+} from '../models/queries';
 import { WS_DATA_TYPE } from '../models/ws-data-type';
 import { State } from '../state/state';
 import { ICreateGameData } from '../models/queries-data/room-data';
 import { IStartGameData } from '../models/queries-data/ships-data';
+import { ITurnResponseData } from '../models/queries-data/game-data';
 
 export class GameService {
   static instance: GameService;
@@ -34,6 +42,10 @@ export class GameService {
 
   getStartGameResponse(data: IStartGameData) {
     return new StartGameResponse(data, WS_DATA_TYPE.START_GAME).response;
+  }
+
+  getTurnResponse(data: ITurnResponseData) {
+    return new TurnResponse(data, WS_DATA_TYPE.TURN).response
   }
 }
 
