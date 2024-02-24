@@ -23,7 +23,6 @@ wss.on('connection', function connection(ws, request) {
 
   ws.on('message', function message(data: Buffer) {
     const dataObject: IRequest<string> = JSON.parse(data.toString());
-    console.log(currentId, '#@#', wss.clients);
     state.setCurrentUser(currentId);
     switch (dataObject?.type) {
       case WS_DATA_TYPE.REG:
@@ -55,6 +54,12 @@ wss.on('connection', function connection(ws, request) {
         break;
       case WS_DATA_TYPE.ADD_SHIPS:
         const addShipsData: IAddShipsData = JSON.parse(dataObject.data);
+        const dataForStart = state.addShips(addShipsData);
+        if(dataForStart) {
+          wss.clients.forEach((ws)=>{
+            ws.send(gameService.getStartGameResponse(dataForStart));
+          })
+        }
 
 
     }

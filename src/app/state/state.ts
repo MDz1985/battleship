@@ -1,5 +1,5 @@
 import { IAddUserToRoomData } from '../models/queries-data/room-data';
-import { IAddShipsData, IShip } from '../models/queries-data/ships-data';
+import { IAddShipsData, IShip, IStartGameData } from '../models/queries-data/ships-data';
 
 interface userState {
   name: string;
@@ -32,7 +32,7 @@ export class State {
   constructor() {return State.instance ?? (State.instance = this);}
 
   setCurrentUser(id: number) {
-    this._currentUser = this._users.find((user) => user.index === id) ?? {index: id, name: ''};
+    this._currentUser = this._users.find((user) => user.index === id) ?? { index: id, name: '' };
   }
 
   addUser(user: userState): userState {
@@ -81,7 +81,7 @@ export class State {
 
   createGame() {
     if (this._currentUser?.index) {
-      const gameId =this._games.length + 1
+      const gameId = this._games.length + 1;
       this._games.push({
         gameId,
         players: [
@@ -91,7 +91,7 @@ export class State {
           }
         ]
       });
-      return {idGame: gameId, idPlayer: this._currentUser.index}
+      return { idGame: gameId, idPlayer: this._currentUser.index };
     }
   }
 
@@ -115,5 +115,22 @@ export class State {
 
   getGameById(id: number): gameState | undefined {
     return this._games.find((g) => g.gameId === id);
+  }
+
+  addShips(data: IAddShipsData): IStartGameData | null {
+    const game = this._games.find((game) => game.gameId === data.gameId) as gameState;
+    const player = game.players.find((p) => p.idPlayer === this._currentUser?.index);
+    if (player) {
+      player.ships = data.ships;
+    } else if (this._currentUser?.index) {
+      game.players.push({
+        idPlayer: this._currentUser.index,
+        ships: data.ships
+      });
+    }
+    const playersCount = 2;
+    return (game?.players?.length < playersCount) || !game.players.every((p) => p.ships.length) || !this._currentUser?.index
+      ? null
+      : { ships: data.ships, currentPlayerIndex: this._currentUser.index };
   }
 }
