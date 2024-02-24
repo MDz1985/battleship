@@ -1,13 +1,13 @@
 import { WebSocketServer } from 'ws';
 import { options } from './options';
 import { WS_DATA_TYPE } from '../models/ws-data-type';
-import { IRequest } from '../models/queries';
+import { AttackResponse, IRequest } from '../models/queries';
 import { GameService } from '../services/game.service';
 import { ILoginRequestData } from '../models/queries-data/player-data';
 import { State } from '../state/state';
 import { IAddUserToRoomData, ICreateGameData } from '../models/queries-data/room-data';
 import { IAddShipsData } from '../models/queries-data/ships-data';
-import { ITurnResponseData } from '../models/queries-data/game-data';
+import { ATTACK_STATUS, IAttackRequestData, IAttackResponseData, ITurnResponseData } from '../models/queries-data/game-data';
 
 const gameService = new GameService();
 const state = new State();
@@ -47,7 +47,7 @@ wss.on('connection', function connection(ws, request) {
         const addUserToRoomData: IAddUserToRoomData = JSON.parse(dataObject.data);
         state.addUserToRoom(addUserToRoomData);
         const createGameData: ICreateGameData = state.createGame() as ICreateGameData;
-        const respData = gameService.getCreateGameResponse(createGameData) as string
+        const respData = gameService.getCreateGameResponse(createGameData) as string;
         wss.clients.forEach((ws) => {
           ws.send(gameService.getUpdateRoomResponse());
           ws.send(respData);
@@ -56,15 +56,35 @@ wss.on('connection', function connection(ws, request) {
       case WS_DATA_TYPE.ADD_SHIPS:
         const addShipsData: IAddShipsData = JSON.parse(dataObject.data);
         const dataForStart = state.addShips(addShipsData);
-        if(dataForStart) {
-          wss.clients.forEach((ws)=>{
+        if (dataForStart) {
+          wss.clients.forEach((ws) => {
             ws.send(gameService.getStartGameResponse(dataForStart));
             const turnResponseData: ITurnResponseData = state.turn(addShipsData.gameId);
             ws.send(gameService.getTurnResponse(turnResponseData));
-          })
+          });
         }
-
-
+        break;
+      case WS_DATA_TYPE.ATTACK:
+        const attackData: IAttackRequestData = JSON.parse(dataObject.data);
+        const attackRespData = state.attack(attackData);
+        let attackResponseData: IAttackResponseData;
+        wss.clients.forEach((ws) => {
+          attackRespData.resArr.forEach(({ x, y, res }) => {
+            switch (res) {
+              case 0:
+                attackResponseData = { position: { x, y }, currentPlayer: attackData.indexPlayer, status: ATTACK_STATUS.MISS };
+                break;
+              case 2:
+                attackResponseData = { position: { x, y }, currentPlayer: attackData.indexPlayer, status: ATTACK_STATUS.SHOT };
+                if (attackRespData.resMessage === 'kill') attackResponseData.status = ATTACK_STATUS.KILLED;
+                break;
+              default:
+                break;
+            }
+            console.log('send', attackResponseData);
+            ws.send(gameService.getAttackResponse(attackResponseData));
+          });
+        });
     }
   });
 });
