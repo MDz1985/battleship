@@ -101,6 +101,11 @@ export class State {
     }
   }
 
+  isCurrentPlayer(gameId: number, userId: number) {
+    const game = this.getGameById(gameId);
+    return game?.currentPlayer === userId;
+  }
+
   getGameById(id: number): gameState | undefined {
     return this._games.find((g) => g.gameId === id);
   }
@@ -124,10 +129,20 @@ export class State {
       : { ships: data.ships, currentPlayerIndex: this._currentUser.index };
   }
 
+  getDataForStart(gameId:number, playerId: number): IStartGameData | null {
+    const player = this.getGameById(gameId)?.players.find((p) => p.idPlayer === playerId);
+    return player ? { ships: player.ships, currentPlayerIndex: player.idPlayer} : null
+  }
+
+  setCurrentPlayer(gameId: number, playerId: number) {
+    const game = this.getGameById(gameId) as gameState;
+    game.currentPlayer = playerId
+  }
+
   turn(gameId: number): ITurnResponseData {
     const game = this.getGameById(gameId) as gameState;
-    const [first_player, second_player] = game.players.map((p) => p.idPlayer);
-    game.currentPlayer = game.currentPlayer === first_player ? second_player : first_player;
+    // const [first_player, second_player] = game.players.map((p) => p.idPlayer);
+    // game.currentPlayer = game.currentPlayer === first_player ? second_player : first_player;
     return { currentPlayer: game.currentPlayer };
   }
 
@@ -152,7 +167,7 @@ export class State {
   }
 
   private addShipToMatrix(matrix: number[][], ships: IShip[]) {
-    console.log(ships);
+    // console.log(ships);
     this.transformShips(ships).forEach(({ x, y }) => {
       matrix[x][y] = 1;
     });

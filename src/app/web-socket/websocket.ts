@@ -1,4 +1,4 @@
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { options } from './options';
 import { WS_DATA_TYPE } from '../models/ws-data-type';
 import { AttackResponse, IRequest } from '../models/queries';
@@ -16,13 +16,20 @@ const state = new State();
 const wss: WebSocketServer = new WebSocketServer(options);
 let id = 0;
 
-wss.on('connection', function connection(ws, request) {
+interface CustomWebSocket extends WebSocket {
+  playerId?: number;
+}
 
-  let currentId = ++id;
+wss.on('connection', function connection(ws: CustomWebSocket, request) {
+
+  let currentId: number = ++id;
+  ws.playerId = currentId;
 
   ws.on('error', console.error);
 
   ws.on('message', function message(data: Buffer) {
+
+
     const dataObject: IRequest<string> = JSON.parse(data.toString());
     state.setCurrentUser(currentId);
     switch (dataObject?.type) {
@@ -47,28 +54,69 @@ wss.on('connection', function connection(ws, request) {
         const addUserToRoomData: IAddUserToRoomData = JSON.parse(dataObject.data);
         state.addUserToRoom(addUserToRoomData);
         const createGameData: ICreateGameData = state.createGame() as ICreateGameData;
-        const respData = gameService.getCreateGameResponse(createGameData) as string;
-        wss.clients.forEach((ws) => {
+
+
+        // const respData = gameService.getCreateGameResponse(createGameData) as string;
+
+
+        wss.clients.forEach((ws: CustomWebSocket) => {
           ws.send(gameService.getUpdateRoomResponse());
+
+          if (ws.playerId) {
+            createGameData.idPlayer = ws.playerId;
+          }
+          console.log(createGameData, 'createGame');
+          const respData = gameService.getCreateGameResponse(createGameData) as string;
+
+
           ws.send(respData);
         });
         break;
       case WS_DATA_TYPE.ADD_SHIPS:
         const addShipsData: IAddShipsData = JSON.parse(dataObject.data);
+
+
+        state.setCurrentPlayer(addShipsData.gameId, addShipsData.indexPlayer);
+        // state.addShips(addShipsData)
+
         const dataForStart = state.addShips(addShipsData);
         if (dataForStart) {
-          wss.clients.forEach((ws) => {
-            ws.send(gameService.getStartGameResponse(dataForStart));
+          wss.clients.forEach((ws: CustomWebSocket) => {
+
+
+            console.log(ws.playerId, 'playerIdAD');
+
+            const newDataForStart = ws.playerId ? state.getDataForStart(addShipsData.gameId, ws.playerId) : null;
+              if (newDataForStart) {
+                  // console.log(newDataForStart.ships, newDataForStart.currentPlayerIndex, 'addShips')
+
+                ws.send(gameService.getStartGameResponse(dataForStart));
+
+              }
+
+            // console.log(dataForStart.ships, dataForStart.currentPlayerIndex, 'addShips')
+
+            // ws.send(gameService.getStartGameResponse(dataForStart));
             const turnResponseData: ITurnResponseData = state.turn(addShipsData.gameId);
-            ws.send(gameService.getTurnResponse(turnResponseData));
+
+
+
+
+            // ws.send(gameService.getTurnResponse(turnResponseData));
           });
         }
         break;
       case WS_DATA_TYPE.ATTACK:
         const attackData: IAttackRequestData = JSON.parse(dataObject.data);
+        if(!state.isCurrentPlayer(attackData.gameId, attackData.indexPlayer)) break;
+        state.setCurrentPlayer(attackData.gameId, attackData.indexPlayer);
         const attackRespData = state.attack(attackData);
         let attackResponseData: IAttackResponseData;
-        wss.clients.forEach((ws) => {
+        wss.clients.forEach((ws: CustomWebSocket) => {
+
+          console.log(ws.playerId, '@userID');
+
+
           attackRespData.resArr.forEach(({ x, y, res }) => {
             switch (res) {
               case 0:
@@ -81,10 +129,23 @@ wss.on('connection', function connection(ws, request) {
               default:
                 break;
             }
-            console.log('send', attackResponseData);
             ws.send(gameService.getAttackResponse(attackResponseData));
           });
           const turnResponseData: ITurnResponseData = state.turn(attackData.gameId);
+          ws.send(gameService.getTurnResponse(turnResponseData));
+        });
+        break;
+      case WS_DATA_TYPE.RANDOM_ATTACK:
+        const randomAttackData: IAttackRequestData = JSON.parse(dataObject.data);
+        const turnResponseData: ITurnResponseData = state.turn(randomAttackData.gameId);
+        wss.clients.forEach((ws: CustomWebSocket) => {
+
+
+          if (ws.playerId) {
+            turnResponseData.currentPlayer = ws.playerId;
+          }
+
+
           ws.send(gameService.getTurnResponse(turnResponseData));
         });
     }
