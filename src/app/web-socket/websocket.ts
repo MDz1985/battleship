@@ -35,25 +35,24 @@ wss.on('connection', function connection(ws: CustomWebSocket, request) {
     switch (dataObject?.type) {
       case WS_DATA_TYPE.REG:
         const data: ILoginRequestData = JSON.parse(dataObject.data);
-        currentId = state.addUser({ name: data.name, password: data.password, index: currentId }).index;
+        state.addUser({ name: data.name, password: data.password, index: currentId }).index;
         ws.send(gameService.getRegResponse(({ name: data.name, password: data.password, index: currentId })));
         wss.clients.forEach((ws) => {
           ws.send(gameService.getUpdateRoomResponse());
           ws.send(gameService.getUpdateWinnersResponse());
         });
 
-        // ws.emit('message', JSON.stringify({ type: WS_DATA_TYPE.UPDATE_WINNERS, data: [], id: 0 }));
         break;
       case WS_DATA_TYPE.CREATE_ROOM:
-        state.createRoom();
+        state.createRoom(currentId);
         wss.clients.forEach((ws) => {
           ws.send(gameService.getUpdateRoomResponse());
         });
         break;
       case WS_DATA_TYPE.ADD_USER_TO_ROOM:
         const addUserToRoomData: IAddUserToRoomData = JSON.parse(dataObject.data);
-        state.addUserToRoom(addUserToRoomData);
-        const createGameData: ICreateGameData = state.createGame() as ICreateGameData;
+        state.addUserToRoom(addUserToRoomData, currentId);
+        const game = state.createGame(addUserToRoomData, currentId);
 
 
         // const respData = gameService.getCreateGameResponse(createGameData) as string;
@@ -61,15 +60,16 @@ wss.on('connection', function connection(ws: CustomWebSocket, request) {
 
         wss.clients.forEach((ws: CustomWebSocket) => {
           ws.send(gameService.getUpdateRoomResponse());
+          // const game = state.getGameById()
 
-          if (ws.playerId) {
-            createGameData.idPlayer = ws.playerId;
+          if (ws.playerId && game && game.players.some((p) => p.idPlayer === ws.playerId)) {
+            const createGameData = {
+              idGame: game.gameId,
+              idPlayer: ws.playerId
+            };
+            const respData = gameService.getCreateGameResponse(createGameData) as string;
+            ws.send(respData);
           }
-          console.log(createGameData, 'createGame');
-          const respData = gameService.getCreateGameResponse(createGameData) as string;
-
-
-          ws.send(respData);
         });
         break;
       case WS_DATA_TYPE.ADD_SHIPS:

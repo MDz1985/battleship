@@ -58,13 +58,14 @@ export class State {
   }
 
 
-  createRoom() {
-    if (this._currentUser) {
+  createRoom(userId: number) {
+    const user = this.getCurrentUser(userId);
+    if (user) {
       this._rooms = [...this._rooms, {
         roomId: this._rooms.length + 1,
         roomUsers:
           [
-            this._currentUser
+            user
           ],
       }];
     }
@@ -74,31 +75,34 @@ export class State {
     return this._rooms.filter((gr) => gr.roomUsers.length === 1);
   }
 
-  addUserToRoom(data: IAddUserToRoomData) {
-    this._rooms = this._rooms.map((room) => {
-      if (room.roomId === data.indexRoom && room.roomUsers.length === 1 && room.roomUsers[0].index !== this._currentUser?.index && this._currentUser) {
-        room.roomUsers.push(this._currentUser);
-      }
-      return room;
-    });
+  getCurrentUser(id: number):Omit<userState, 'password'> {
+    const user = this._users.find((u) => u.index === id) as userState;
+    return { index: id, name: user.name }
   }
 
-  createGame() {
-    if (this._currentUser?.index) {
-      const gameId = this._games.length + 1;
-      this._games.push({
-        gameId,
-        players: [
-          {
-            idPlayer: this._currentUser.index,
-            ships: [],
-            matrix: [[]]
-          }
-        ],
-        currentPlayer: this._currentUser.index
-      });
-      return { idGame: gameId, idPlayer: this._currentUser.index };
+  addUserToRoom(data: IAddUserToRoomData, userId: number) {
+    const room = this._rooms.find((r) => r.roomId === data.indexRoom) as roomState;
+    const user = this.getCurrentUser(userId);
+    if(room.roomUsers.length === 1) {
+      room.roomUsers.push(user);
     }
+  }
+
+  createGame(data: IAddUserToRoomData, userId: number) {
+    const room = this._rooms.find((r) => r.roomId === data.indexRoom) as roomState;
+    const players = room?.roomUsers.map((u) => ({
+      idPlayer: u.index,
+      ships: [],
+      matrix: [[]]
+    }));
+    const gameId = this._games.length + 1;
+    const game = {
+      gameId,
+      players,
+      currentPlayer: userId
+    };
+    this._games.push(game);
+    return game;
   }
 
   isCurrentPlayer(gameId: number, userId: number) {
@@ -129,14 +133,14 @@ export class State {
       : { ships: data.ships, currentPlayerIndex: this._currentUser.index };
   }
 
-  getDataForStart(gameId:number, playerId: number): IStartGameData | null {
+  getDataForStart(gameId: number, playerId: number): IStartGameData | null {
     const player = this.getGameById(gameId)?.players.find((p) => p.idPlayer === playerId);
-    return player ? { ships: player.ships, currentPlayerIndex: player.idPlayer} : null
+    return player ? { ships: player.ships, currentPlayerIndex: player.idPlayer } : null;
   }
 
   setCurrentPlayer(gameId: number, playerId: number) {
     const game = this.getGameById(gameId) as gameState;
-    game.currentPlayer = playerId
+    game.currentPlayer = playerId;
   }
 
   turn(gameId: number): ITurnResponseData {
@@ -163,7 +167,7 @@ export class State {
     const opponent = game.players.find((pl) => pl.idPlayer !== game.currentPlayer) as playerState;
     // const matrix: number[][] = Array.from(Array(fieldSize), (el) => Array(fieldSize).fill(0));
     // return this.addShipToMatrix(matrix, opponent.ships);
-    return opponent.matrix
+    return opponent.matrix;
   }
 
   private addShipToMatrix(matrix: number[][], ships: IShip[]) {
@@ -189,7 +193,7 @@ export class State {
     if (matrix[x][y]) {
       resMessage = 'shot';
       matrix[x][y] = 2;
-      resArr.push({x,y, res: 2})
+      resArr.push({ x, y, res: 2 });
       while (matrix[stX - 1] && matrix[stX - 1][y]) {
         stX--;
         resArr.push({ x: stX, y, res: matrix[stX][y] });
