@@ -136,9 +136,10 @@ export class State {
   }
 
   turn(gameId: number): ITurnResponseData {
-    const game = this.getGameById(gameId) as gameState;
-    // const [first_player, second_player] = game.players.map((p) => p.idPlayer);
-    // game.currentPlayer = game.currentPlayer === first_player ? second_player : first_player;
+    const game = this.getGameById(gameId);
+    const [first_player, second_player] = game.players.map((p) => p.idPlayer);
+    game.currentPlayer = game.currentPlayer === first_player ? second_player : first_player;
+    console.log(game.currentPlayer, '@currentPlayer');
     return { currentPlayer: game.currentPlayer };
   }
 
