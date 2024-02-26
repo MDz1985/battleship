@@ -110,27 +110,19 @@ export class State {
     return game?.currentPlayer === userId;
   }
 
-  getGameById(id: number): gameState | undefined {
-    return this._games.find((g) => g.gameId === id);
+  getGameById(id: number): gameState {
+    return this._games.find((g) => g.gameId === id) as gameState;
   }
 
-  addShips(data: IAddShipsData): IStartGameData | null {
-    const game = this._games.find((game) => game.gameId === data.gameId) as gameState;
-    const player = game.players.find((p) => p.idPlayer === this._currentUser?.index);
+  addShips(data: IAddShipsData, userId: number): boolean {
+    const game = this.getGameById(data.gameId);
+    const player = game.players.find((p) => p.idPlayer === this._currentUser?.index) as playerState;
     if (player) {
       player.ships = data.ships;
       player.matrix = this.createMatrix(data.ships);
-    } else if (this._currentUser?.index) {
-      game.players.push({
-        idPlayer: this._currentUser.index,
-        ships: data.ships,
-        matrix: this.createMatrix(data.ships)
-      });
     }
     const playersCount = 2;
-    return (game?.players?.length < playersCount) || !game.players.every((p) => p.ships.length) || !this._currentUser?.index
-      ? null
-      : { ships: data.ships, currentPlayerIndex: this._currentUser.index };
+    return game.players.every((p) => p.ships.length)
   }
 
   getDataForStart(gameId: number, playerId: number): IStartGameData | null {

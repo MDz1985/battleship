@@ -79,32 +79,27 @@ wss.on('connection', function connection(ws: CustomWebSocket, request) {
         state.setCurrentPlayer(addShipsData.gameId, addShipsData.indexPlayer);
         // state.addShips(addShipsData)
 
-        const dataForStart = state.addShips(addShipsData);
-        if (dataForStart) {
+
+
+        // if (dataForStart) {
+        if(state.addShips(addShipsData, currentId)) {
           wss.clients.forEach((ws: CustomWebSocket) => {
-
-
-            console.log(ws.playerId, 'playerIdAD');
-
-            const newDataForStart = ws.playerId ? state.getDataForStart(addShipsData.gameId, ws.playerId) : null;
-              if (newDataForStart) {
-                  // console.log(newDataForStart.ships, newDataForStart.currentPlayerIndex, 'addShips')
-
+            const game = state.getGameById(addShipsData.gameId);
+            if(ws.playerId && game.players.some((pl) => pl.idPlayer === ws.playerId)) {
+              const dataForStart = state.getDataForStart(addShipsData.gameId, ws.playerId);
+              if(dataForStart) {
                 ws.send(gameService.getStartGameResponse(dataForStart));
-
               }
-
-            // console.log(dataForStart.ships, dataForStart.currentPlayerIndex, 'addShips')
-
-            // ws.send(gameService.getStartGameResponse(dataForStart));
-            const turnResponseData: ITurnResponseData = state.turn(addShipsData.gameId);
+            }
 
 
 
+            // const turnResponseData: ITurnResponseData = state.turn(addShipsData.gameId);
 
-            // ws.send(gameService.getTurnResponse(turnResponseData));
           });
         }
+
+        // }
         break;
       case WS_DATA_TYPE.ATTACK:
         const attackData: IAttackRequestData = JSON.parse(dataObject.data);
