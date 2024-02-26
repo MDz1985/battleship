@@ -104,39 +104,38 @@ wss.on('connection', function connection(ws: CustomWebSocket, request) {
         let attackResponseData: IAttackResponseData;
         wss.clients.forEach((ws: CustomWebSocket) => {
 
-          console.log(ws.playerId, '@userID');
+          const game = state.getGameById(attackData.gameId);
+          if (ws.playerId && game.players.some((pl) => pl.idPlayer === ws.playerId)) {
 
-
-          attackRespData.resArr.forEach(({ x, y, res }) => {
-            switch (res) {
-              case 0:
-                attackResponseData = { position: { x, y }, currentPlayer: attackData.indexPlayer, status: ATTACK_STATUS.MISS };
-                break;
-              case 2:
-                attackResponseData = { position: { x, y }, currentPlayer: attackData.indexPlayer, status: ATTACK_STATUS.SHOT };
-                if (attackRespData.resMessage === 'kill') attackResponseData.status = ATTACK_STATUS.KILLED;
-                break;
-              default:
-                break;
-            }
-            ws.send(gameService.getAttackResponse(attackResponseData));
-          });
+            attackRespData.resArr.forEach(({ x, y, res }) => {
+              switch (res) {
+                case 0:
+                  attackResponseData = { position: { x, y }, currentPlayer: attackData.indexPlayer, status: ATTACK_STATUS.MISS };
+                  break;
+                case 2:
+                  attackResponseData = { position: { x, y }, currentPlayer: attackData.indexPlayer, status: ATTACK_STATUS.SHOT };
+                  if (attackRespData.resMessage === 'kill') attackResponseData.status = ATTACK_STATUS.KILLED;
+                  break;
+                default:
+                  break;
+              }
+              ws.send(gameService.getAttackResponse(attackResponseData));
+            });
+          }
         });
-        turn(attackData.gameId)
+        checkFinish(attackData.gameId);
+        turn(attackData.gameId);
         break;
       case WS_DATA_TYPE.RANDOM_ATTACK:
         const randomAttackData: IAttackRequestData = JSON.parse(dataObject.data);
-        // const turnResponseData: ITurnResponseData = state.turn(randomAttackData.gameId);
         wss.clients.forEach((ws: CustomWebSocket) => {
+          const game = state.getGameById(randomAttackData.gameId);
+          if (ws.playerId && game.players.some((pl) => pl.idPlayer === ws.playerId)) {
 
-
-          if (ws.playerId) {
-            // turnResponseData.currentPlayer = ws.playerId;
           }
-
-
-          // ws.send(gameService.getTurnResponse(turnResponseData));
         });
+        checkFinish(randomAttackData.gameId);
+        turn(randomAttackData.gameId);
     }
   });
 });
@@ -153,4 +152,18 @@ function turn(gameId: number) {
       ws.send(gameService.getTurnResponse(turnResponseData));
     }
   });
+}
+
+function checkFinish(gameId: number) {
+  const game = state.getGameById(gameId);
+  if (!game.players.every((pl) => pl.matrix.flat(1).includes(1))) {
+    const winner = game.players.find((pl) => pl.matrix.flat(1).includes(1));
+    wss.clients.forEach((ws: CustomWebSocket) => {
+      if (ws.playerId && winner && game.players.some((pl) => pl.idPlayer === ws.playerId)) {
+        ws.send(gameService.getFinishResponse({ winPlayer: winner.idPlayer }));
+      }
+    });
+  }
+
+
 }
